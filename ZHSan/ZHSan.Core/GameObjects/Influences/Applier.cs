@@ -15,6 +15,7 @@ namespace GameObjects.Influences
         Stratagem,
         CombatMethod,
         Event,
-        MilitaryKind
+        MilitaryKind,
+        StatusEffect
     }
 }

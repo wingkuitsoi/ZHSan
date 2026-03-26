@@ -12,6 +12,7 @@
     using Platforms;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     internal class PersonDetail
     {
@@ -48,6 +49,8 @@
 
         internal Rectangle TreasureTextClient;
         internal FreeRichText TreasureText = new FreeRichText();
+
+        internal FreeText statusEffectText;
 
         internal Rectangle MoreMessageBGClient;
         internal Point MoreMessageBGSize;
@@ -144,6 +147,8 @@
                 this.SurNameText.Draw(0.1999f);
                 this.GivenNameText.Draw(0.1999f);
                 this.CalledNameText.Draw(0.1999f);
+                statusEffectText.Draw(0.1999f);
+
                 foreach (LabelText text in this.LabelTexts)
                 {
                     text.Label.Draw(0.1999f);
@@ -809,6 +814,8 @@
             this.SurNameText.Text = person.SurName;
             this.GivenNameText.Text = person.GivenName;
             this.CalledNameText.Text = person.CalledName;
+            statusEffectText.Text = string.Join(" ", person.GetStatusEffects());
+
             foreach (LabelText text in this.LabelTexts)
             {
                 text.Text.Text = StaticMethods.GetPropertyValue(person, text.PropertyName).ToString();
@@ -1100,6 +1107,8 @@
             this.SurNameText.DisplayOffset = this.DisplayOffset;
             this.GivenNameText.DisplayOffset = this.DisplayOffset;
             this.CalledNameText.DisplayOffset = this.DisplayOffset;
+            statusEffectText.DisplayOffset = DisplayOffset;
+
             foreach (LabelText text in this.LabelTexts)
             {
                 text.Label.DisplayOffset = this.DisplayOffset;

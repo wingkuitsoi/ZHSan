@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Linq;
+using GameEvents;
 
 namespace GameObjects
 {
@@ -24,6 +25,11 @@ namespace GameObjects
     [DataContract]
     public class Architecture : GameObject
     {
+        /// <summary>
+        /// 事件管理器
+        /// </summary>
+        private EventManager eventManager;
+
         class SimulatingFightingForceComparer : IComparer<Troop>
         {
             public int Compare(Troop x, Troop y)
@@ -42,6 +48,8 @@ namespace GameObjects
 
         public void Init()
         {
+            eventManager = EventManager.Instance;
+
             AIAllLinkNodes = new Dictionary<int, LinkNode>();
 
             AILandLinks = new ArchitectureList();
@@ -15658,6 +15666,7 @@ namespace GameObjects
                 dict.SortByDictValueDesc();
                 
                 int invited = 0;
+                var invitees = new List<Person>();
                 foreach (Person p2 in candidates)
                 {
                     if (GameObject.Chance(p2.GetRelation(p) / 60 + 10))
@@ -15665,9 +15674,13 @@ namespace GameObjects
                         p.AdjustRelation(p2, 3, 0);
                         p2.AdjustRelation(p, 3, 0);
                         invited++;
+                        invitees.Add(p2);
                         if (invited > 3) break;
                     }
                 }
+
+                // 宴请事件
+                eventManager.Publish(new EntertainEvent(p, invitees));
             }
         }
 

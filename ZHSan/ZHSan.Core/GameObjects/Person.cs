@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Platforms;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Tools;
 
@@ -69,6 +70,19 @@ namespace GameObjects
 
         public void Init()
         {
+            // 初始化临时状态
+            if (statusEffects != null) 
+            {
+                foreach (var key in statusEffects.Keys)
+                {
+                    ApplyStatusEffects(key);
+                }
+            }
+            else 
+            {
+                statusEffects = new Dictionary<int, int>();
+            }
+
             suoshurenwuList = new PersonList();
 
             brothers = new PersonList();
@@ -2359,6 +2373,8 @@ namespace GameObjects
                 this.createRelations();
                 this.AutoLearnEvent();
                 this.ArchitectureFacilityEvent();
+
+                DailyStatusEffectDecay();
 
                 List<int> toRemove = new List<int>();
                 foreach (KeyValuePair<int, int> i in new Dictionary<int, int>(this.ProhibitedFactionID))
@@ -11938,6 +11954,129 @@ namespace GameObjects
                     case "pub": locationArchitecture.GoToPub(this); break;
                     case "createTreasure": locationArchitecture.CreateTreasure(this); break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 临时状态
+        /// </summary>
+        [DataMember]
+        private Dictionary<int, int> statusEffects;
+
+        /// <summary>
+        /// 获取临时状态列表
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetStatusEffects()
+        {
+            var result = new List<string>();
+            
+            StatusEffect statusEffect;
+            foreach (var key in statusEffects.Keys)
+            {
+                if (CommonData.Current.AllStatusEffects.TryGetValue(key, out statusEffect))
+                {
+                    result.Add(statusEffect.Name);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 喝酒
+        /// </summary>
+        public void Drink()
+        {
+            var drinkStatus = Session.Current.Scenario.GameCommonData.AllStatusEffects.Values.Where(x => x.StatusType == (int)StatusType.Drink).FirstOrDefault();
+
+            var key = drinkStatus.ID;
+            var value = drinkStatus.Duration;
+
+            if (statusEffects.ContainsKey(key))
+            {
+                statusEffects[key] += value;
+            }
+            else
+            {
+                statusEffects.Add(key, value);
+
+                ApplyStatusEffects(key);
+            }
+        }
+
+        /// <summary>
+        /// 每日临时状态衰减
+        /// </summary>
+        public void DailyStatusEffectDecay()
+        {
+            if (statusEffects == null) return;
+
+            // ToList用于复制key
+            foreach (var key in statusEffects.Keys.ToList())
+            {
+                statusEffects[key]--;
+
+                if (statusEffects[key] <= 0)
+                {
+                    statusEffects.Remove(key);
+
+                    PurifyStatusEffects(key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 根据Id获取临时状态对应的影响列表
+        /// </summary>
+        /// <param name="statusEffectId"></param>
+        /// <returns></returns>
+        public InfluenceTable GetStatusEffectInfluenceTable(int statusEffectId) 
+        {
+            // TODO: 不使用Table仅用Id关联，减少数据重复保存，后续统一
+
+            var allStatusEffects = Session.Current.Scenario.GameCommonData.AllStatusEffects;
+
+            if (!allStatusEffects.ContainsKey(statusEffectId))
+                return null;
+
+            StatusEffect statusEffect = allStatusEffects[statusEffectId];
+            var influences = CommonData.Current.GetInfluences(statusEffect.Influences);
+
+            InfluenceTable influenceTable = new InfluenceTable();
+            foreach (var item in influences)
+            {
+                influenceTable.AddInfluence(item);
+            }
+
+            return influenceTable;
+        }
+
+        /// <summary>
+        /// 应用临时状态影响
+        /// </summary>
+        /// <param name="statusEffectId"></param>
+        public void ApplyStatusEffects(int statusEffectId)
+        {
+            var influenceTable = GetStatusEffectInfluenceTable(statusEffectId);
+
+            if (influenceTable != null)
+            {
+                influenceTable.ApplyInfluence(this, GameObjects.Influences.Applier.StatusEffect, 1, false);
+            }
+        }
+
+        /// <summary>
+        /// 清除临时状态影响
+        /// </summary>
+        /// <param name="statusEffectId"></param>
+        public void PurifyStatusEffects(int statusEffectId) 
+        {
+            var influenceTable = GetStatusEffectInfluenceTable(statusEffectId);
+
+            if (influenceTable != null)
+            {
+                influenceTable.PurifyInfluence(this, GameObjects.Influences.Applier.StatusEffect, 1, false);
             }
         }
     }

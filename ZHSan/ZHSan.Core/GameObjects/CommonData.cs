@@ -12,6 +12,7 @@ using Microsoft.Xna.Framework;
 using Platforms;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects
@@ -130,6 +131,14 @@ namespace GameObjects
 
         public TroopAnimation TroopAnimations = new TroopAnimation();
 
+        /// <summary>
+        /// 状态效果
+        /// </summary>
+        [DataMember]
+        public Dictionary<int, StatusEffectConfig> allStatusEffects = new();
+
+        public Dictionary<int, StatusEffect> AllStatusEffects { get; private set; } = new();
+
         public CommonData Clone()
         {
             var commonData = this.MemberwiseClone() as CommonData;
@@ -192,6 +201,8 @@ namespace GameObjects
 
                     GameScenario.ProcessCommonData(Current);
 
+                    MapRelation();
+
                     CurrentReady = true;
                 }
                 catch (Exception ex)
@@ -199,6 +210,58 @@ namespace GameObjects
                     throw new Exception("CommonData初始化失敗:" + ex);
                 }
             }).Start();
+        }
+
+        public static void MapRelation()
+        {
+            if (Current.allStatusEffects != null)
+            {
+                Current.AllStatusEffects = Current.allStatusEffects.Values.Select(config => new StatusEffect(config)).ToDictionary(x => x.ID, x => x);
+            }
+        }
+
+        /// <summary>
+        /// 根据ID字符串获取条件列表
+        /// </summary>
+        /// <param name="conditionIds"></param>
+        /// <returns></returns>
+        public List<Condition> GetConditions(string conditionIds)
+        {
+            var ids = conditionIds.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            var id = 0;
+            var condition = new Condition();
+            var result = new List<Condition>();
+
+            foreach (var idStr in ids)
+            {
+                if (int.TryParse(idStr, out id) && AllConditions.Conditions.TryGetValue(id, out condition))
+                    result.Add(condition);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 根据ID字符串获取影响列表
+        /// </summary>
+        /// <param name="influenceIds"></param>
+        /// <returns></returns>
+        public List<Influence> GetInfluences(string influenceIds)
+        {
+            var ids = influenceIds.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            var id = 0;
+            var influence = new Influence();
+            var result = new List<Influence>();
+
+            foreach (var idStr in ids)
+            {
+                if (int.TryParse(idStr, out id) && AllInfluences.Influences.TryGetValue(id, out influence))
+                    result.Add(influence);
+            }
+
+            return result;
         }
     }
 }
