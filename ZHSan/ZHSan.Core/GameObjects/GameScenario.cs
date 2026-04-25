@@ -3341,7 +3341,7 @@ namespace GameObjects
 
             foreach (Facility facility in this.Facilities)
             {
-                if (this.GameCommonData.AllFacilityKinds.GetFacilityKind(facility.KindID) == null)
+                if (this.GameCommonData.AllFacilityKinds.Get(facility.KindID) == null)
                 {
                     errorMsg.Add("设施ID" + facility.ID + "：设施种类ID" + facility.KindID + "不存在");
                     continue;

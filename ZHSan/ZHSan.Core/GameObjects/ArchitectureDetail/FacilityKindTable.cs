@@ -1,6 +1,5 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects.ArchitectureDetail
@@ -10,96 +9,50 @@ namespace GameObjects.ArchitectureDetail
     {
         [DataMember]
         public Dictionary<int, FacilityKind> FacilityKinds = new Dictionary<int, FacilityKind>();
-
-        private int maxFacilitySpace = -1;
-        public int GetMaxFacilitySpace()
+    
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name="facilityKind"></param>
+        /// <returns></returns>
+        public bool Add(FacilityKind facilityKind)
         {
-            if (maxFacilitySpace < 0)
-            {
-                foreach (FacilityKind fk in this.GetFacilityKindList())
-                {
-                    if (fk.PositionOccupied > maxFacilitySpace)
-                    {
-                        maxFacilitySpace = fk.PositionOccupied;
-                    }
-                }
-            }
-            return maxFacilitySpace;
+            return FacilityKinds.TryAdd(facilityKind.ID, facilityKind);
+        }
+        
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool Remove(int id)
+        {
+            return FacilityKinds.Remove(id);
         }
 
-        public bool AddFacilityKind(FacilityKind facilityKind)
+        /// <summary>
+        /// 查找
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public FacilityKind Get(int id)
         {
-            if (this.FacilityKinds.ContainsKey(facilityKind.ID))
-            {
-                return false;
-            }
-            this.FacilityKinds.Add(facilityKind.ID, facilityKind);
-            return true;
-        }
-
-        public void Clear()
-        {
-            this.FacilityKinds.Clear();
-        }
-
-        public FacilityKind GetFacilityKind(int facilityKindID)
-        {
-            FacilityKind kind = null;
-            this.FacilityKinds.TryGetValue(facilityKindID, out kind);
+            FacilityKinds.TryGetValue(id, out var kind);
             return kind;
         }
 
-        public GameObjectList GetFacilityKindList()
-        {
-            GameObjectList list = new GameObjectList();
-            foreach (FacilityKind kind in this.FacilityKinds.Values)
-            {
-                list.Add(kind);
-            }
-            return list;
-        }
+        public int Count => FacilityKinds.Count;
 
-        public void LoadFromString(FacilityKindTable allFacilityKinds, string facilityKindIDs)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = facilityKindIDs.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            FacilityKind kind = null;
-            for (int i = 0; i < strArray.Length; i++)
-            {
-                if (allFacilityKinds.FacilityKinds.TryGetValue(int.Parse(strArray[i]), out kind))
-                {
-                    this.AddFacilityKind(kind);
-                }
-            }
-        }
+        public GameObjectList GetFacilityKindList() => [.. FacilityKinds.Values];
 
-        public bool RemoveFacilityKind(int id)
-        {
-            if (!this.FacilityKinds.ContainsKey(id))
-            {
-                return false;
-            }
-            this.FacilityKinds.Remove(id);
-            return true;
-        }
+        public void Clear() => FacilityKinds.Clear();
 
-        public string SaveToString()
-        {
-            string str = "";
-            foreach (FacilityKind kind in this.FacilityKinds.Values)
-            {
-                str = str + kind.ID.ToString() + " ";
-            }
-            return str;
-        }
+        public string SaveToString() => string.Join(" ", FacilityKinds.Values.Select(x => x.ID));
 
-        public int Count
-        {
-            get
-            {
-                return this.FacilityKinds.Count;
-            }
-        }
+        /// <summary>
+        /// 最大占用位置
+        /// </summary>
+        /// <returns></returns>
+        public int GetMaxFacilityPosition() => FacilityKinds.Values.Max(x => x.PositionOccupied);
     }
 }
-

@@ -1271,7 +1271,7 @@ namespace GameObjects
                             planned = true;
                             break;
                         }
-                        if (a.BuildingFacility >= 0 && Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(a.BuildingFacility).rongna > 0)
+                        if (a.BuildingFacility >= 0 && Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(a.BuildingFacility).rongna > 0)
                         {
                             planned = true;
                             break;

@@ -3437,7 +3437,7 @@ namespace ArchitectureDetail
                 this.FacilityText.AddNewLine();
                 if (this.ShowingArchitecture.BuildingFacility >= 0)
                 {
-                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
+                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.ShowingArchitecture.BuildingFacility);
                     if (facilityKind != null)
                     {
                         this.FacilityText.AddText("建造中：");
@@ -3530,7 +3530,7 @@ namespace ArchitectureDetail
                         this.TheFacility1Text.AddNewLine();
                         if (this.ShowingArchitecture.BuildingFacility >= 0)
                         {
-                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
+                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.ShowingArchitecture.BuildingFacility);
                             if (facilityKind != null)
                             {
                                 this.TheFacility1Text.AddText("建造中：");
@@ -3696,7 +3696,7 @@ namespace ArchitectureDetail
                     PageForArchitectureCharacteristic = Switch44;
                     if (this.ShowingArchitecture.BuildingFacility >= 0)
                     {                        
-                        FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
+                        FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.ShowingArchitecture.BuildingFacility);
                         if (facilityKind != null)
                         {
                             HasBuildingFacility = true;
@@ -3716,7 +3716,7 @@ namespace ArchitectureDetail
                     {                                               
                         if (this.ShowingArchitecture.BuildingFacility >= 0)
                         {
-                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
+                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.ShowingArchitecture.BuildingFacility);
                             if (facilityKind != null)
                             {
                                 this.TheFacility3Text.AddText(this.TheFacility3Text1,this.TheFacility3Text.TitleColor);

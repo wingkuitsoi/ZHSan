@@ -1387,9 +1387,8 @@ namespace GameObjects
                         if (!kind.CanBuild(this)) continue;
                         if (kind.FundCost <= this.Fund)
                         {
-                            FacilityKind facilityKind = kind;
-                            this.BelongedFaction.DepositTechniquePointForFacility(facilityKind.PointCost);
-                            this.BeginToBuildAFacility(facilityKind);
+                            this.BelongedFaction.DepositTechniquePointForFacility(kind.PointCost);
+                            this.BeginToBuildAFacility(kind);
                             return true;
                         }
                         else if (this.ExpectedFund != 0 && (kind.FundCost - (this.Fund - this.EnoughFund)) / this.ExpectedFund + 1 <= kind.Days / 15)
@@ -1474,7 +1473,7 @@ namespace GameObjects
                         f.ReSort();
                         foreach (Facility i in f)
                         {
-                            if (this.CanRemoveFacility(i) && i.Kind.NetFundIncrease <= 0 && i.Kind.rongna == 0)
+                            if (this.CanRemoveFacility(i) && !i.Kind.IsProfitable && i.Kind.rongna == 0)
                             {
                                 if (this.FacilityEnabled || i.MaintenanceCost <= 0)
                                 {
@@ -1497,7 +1496,7 @@ namespace GameObjects
                         if (kind.IsExtension) continue;
                         if (!kind.CanBuild(this)) continue;
                         if (kind.rongna > 0) continue;
-                        if ((kind.MaintenanceCost + this.FacilityMaintenanceCost) * 30 + 2000 > this.ExpectedFund && kind.NetFundIncrease <= 0)
+                        if ((kind.MaintenanceCost + this.FacilityMaintenanceCost) * 30 + 2000 > this.ExpectedFund && !kind.IsProfitable)
                         {
                             continue;
                         }
@@ -1520,7 +1519,7 @@ namespace GameObjects
                             {
                                 if (this.FacilityPositionLeft < kind.PositionOccupied)
                                 {
-                                    if (this.BelongedSection != null && this.BelongedSection.AIDetail != null && this.BelongedSection.AIDetail.AllowFacilityRemoval && this.FacilityPositionLeft < Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetMaxFacilitySpace())
+                                    if (this.BelongedSection != null && this.BelongedSection.AIDetail != null && this.BelongedSection.AIDetail.AllowFacilityRemoval && this.FacilityPositionLeft < Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetMaxFacilityPosition())
                                     {
                                         int fpl = this.FacilityPositionLeft;
                                         toDestroy.Clear();
@@ -4176,7 +4175,7 @@ namespace GameObjects
 
         public void StopBuildingFacility()
         {
-            FacilityKind fac = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.BuildingFacility);
+            FacilityKind fac = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.BuildingFacility);
             this.IncreaseFund((int)(fac.FundCost * 0.5 * this.BuildingDaysLeft / fac.Days));
             this.BuildingFacility = -1;
             this.BuildingDaysLeft = 0;
@@ -5054,7 +5053,7 @@ namespace GameObjects
                 this.BuildingDaysLeft -= 1;
                 if (this.BuildingDaysLeft <= 0)
                 {
-                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.BuildingFacility);
+                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.BuildingFacility);
                     if (facilityKind != null)
                     {
                         this.BuildFacility(facilityKind);
@@ -12971,8 +12970,6 @@ namespace GameObjects
             get
             {
                 return this.ArchitectureArea.Count;
-
-
             }
         }
 
@@ -13564,32 +13561,35 @@ namespace GameObjects
             }
         }
 
-        public int FacilityPositionCount
-        {
-            get
-            {
-                return (_architectureKind.FacilityPositionUnit * (this.JianzhuGuimo + this.IncrementOfFacilityPositionCount));
-            }
-        }
-
+        /// <summary>
+        /// 总设施空间
+        /// </summary>
+        public int FacilityPositionCount => _architectureKind.FacilityPositionUnit * (this.JianzhuGuimo + this.IncrementOfFacilityPositionCount);
+      
+        /// <summary>
+        /// 剩余设施空间
+        /// </summary>
         public int FacilityPositionLeft
         {
             get
             {
-                int facilityPositionCount = this.FacilityPositionCount;
-                foreach (Facility facility in this.Facilities)
+                var positionOccupied = 0;
+
+                // 已建完的设施空间
+                foreach (Facility facility in Facilities)
                 {
-                    facilityPositionCount -= facility.PositionOccupied;
+                    positionOccupied += facility.PositionOccupied;
                 }
-                if (this.BuildingFacility >= 0)
+
+                // 在建的设施空间
+                if (BuildingFacility >= 0)
                 {
-                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.BuildingFacility);
-                    if (facilityKind != null)
-                    {
-                        facilityPositionCount -= facilityKind.PositionOccupied;
-                    }
+                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(BuildingFacility);
+                    
+                    positionOccupied += facilityKind?.PositionOccupied ?? 0;
                 }
-                return facilityPositionCount;
+
+                return FacilityPositionCount - positionOccupied;
             }
         }
 

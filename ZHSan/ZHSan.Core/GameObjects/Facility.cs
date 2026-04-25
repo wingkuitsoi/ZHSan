@@ -27,16 +27,6 @@ namespace GameObjects
             }
         }
 
-        public GameObjectList GetInfluenceList()
-        {
-            return this.Kind.GetInfluenceList();
-        }
-
-        public GameObjectList GetConditionList()
-        {
-            return this.Kind.GetConditionList();
-        }
-
         public void RecoverEndurance(int extraInc)
         {
             if (this.endurance != this.EnduranceCeiling)
@@ -76,14 +66,6 @@ namespace GameObjects
             get
             {
                 return this.Kind.Description;
-            }
-        }
-
-        public string ConditionString
-        {
-            get
-            {
-                return this.Kind.ConditionString;
             }
         }
 
@@ -138,7 +120,7 @@ namespace GameObjects
             {
                 if (this.kind == null)
                 {
-                    this.kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.kindID);
+                    this.kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.kindID);
                 }
                 return this.kind;
             }
@@ -243,17 +225,5 @@ namespace GameObjects
                 return null;
             }
         }
-
-        public double AIValue
-        {
-            get
-            {
-                double val = this.Kind.AIValue(this.location);
-                if (val < 0) val = -1;
-                return val;
-            }
-        }
-
     }
 }
-
