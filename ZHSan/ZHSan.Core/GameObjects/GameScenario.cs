@@ -3425,7 +3425,7 @@ namespace GameObjects
                 //architecture.FacilitiesString = reader["Facilities"].ToString();
 
                 e.AddRange(architecture.LoadMilitariesFromString(this.Militaries, architecture.MilitariesString));
-                e.AddRange(architecture.LoadFacilitiesFromString(this.Facilities, architecture.FacilitiesString));
+                e.AddRange(architecture.LoadFacilitiesFromString(Facilities, architecture.FacilitiesString));
 
                 //architecture.FundPacksString = reader["FundPacks"].ToString();
 
@@ -4791,7 +4791,7 @@ namespace GameObjects
 
                     architecture.feiziliebiaoString = architecture.Feiziliebiao.SaveToString();
                     architecture.MilitariesString = architecture.Militaries.SaveToString();
-                    architecture.FacilitiesString = architecture.Facilities.SaveToString();
+                    architecture.FacilitiesString = StaticMethods.SaveIdToString(architecture.Facilities);
 
                     architecture.PlanFacilityKindID = (architecture.PlanFacilityKind != null) ? architecture.PlanFacilityKind.ID : -1;
 

@@ -1,229 +1,131 @@
 ﻿using GameManager;
 using GameObjects.ArchitectureDetail;
+using GameObjects.Conditions;
 using GameObjects.Influences;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameObjects
 {
+    /// <summary>
+    /// 设施
+    /// </summary>
     [DataContract]
     public class Facility : GameObject
     {
-        private int endurance;
-        private FacilityKind kind;
-        private int kindID;
+        # region DataMember
 
+        /// <summary>
+        /// 种类ID
+        /// </summary>
+        [DataMember]
+        public int KindID { get; private set; }
 
+        /// <summary>
+        /// 耐久
+        /// </summary>
+        [DataMember]
+        public int Endurance { get; private set; }
+
+        # endregion
+
+        private FacilityKind _kind;
+
+        private FacilityKind Kind
+        {
+            get
+            {
+                // 懒加载
+                if (_kind == null)
+                {
+                    _kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(KindID);
+                }
+
+                return _kind;
+            }
+        }
+
+        /// <summary>
+        /// 耐久下降
+        /// </summary>
+        /// <param name="decrement"></param>
         public void DecreaseEndurance(int decrement)
         {
-            this.endurance -= decrement;
+            Endurance -= decrement;
         }
 
-        public void DoWork(Architecture a)
-        {
-            foreach (Influence influence in this.Kind.Influences.Influences.Values)
-            {
-                influence.DoWork(a);
-            }
-        }
-
+        /// <summary>
+        /// 耐久恢复
+        /// </summary>
+        /// <param name="extraInc"></param>
         public void RecoverEndurance(int extraInc)
         {
-            if (this.endurance != this.EnduranceCeiling)
+            // 耐久小于上限时才需要恢复
+            if (Endurance < EnduranceCeiling)
             {
-                int increase = (this.EnduranceCeiling / this.Days) / 2 + extraInc;
-                this.endurance += increase < 1 ? 1 : increase;
-                if (this.endurance > this.EnduranceCeiling)
-                {
-                    this.endurance = this.EnduranceCeiling;
-                }
+                int increase = EnduranceCeiling / Kind.Days / 2 + extraInc;
+
+                Endurance += Math.Max(1, increase);
+
+                Endurance = Math.Max(Endurance, EnduranceCeiling);
             }
         }
 
-        public override string ToString()
+        public void DoWork(Architecture architecture)
         {
-            return this.Name;
-        }
-
-        public int Days
-        {
-            get
+            foreach (Influence influence in Kind.Influences.Influences.Values)
             {
-                return this.Kind.Days;
+                influence.DoWork(architecture);
             }
         }
 
-        public int DaysText
-        {
-            get
-            {
-                return this.Kind.Days * Session.Parameters.DayInTurn;
-            }
-        }
+        public int DaysText => Kind.Days * Session.Parameters.DayInTurn;
 
-        public string Description
-        {
-            get
-            {
-                return this.Kind.Description;
-            }
-        }
+        public string Description => Kind.Description;
 
-        [DataMember]
-        public int Endurance
-        {
-            get
-            {
-                return this.endurance;
-            }
-            set
-            {
-                this.endurance = value;
-            }
-        }
+        public int EnduranceCeiling => Kind.Endurance;
 
-        public int EnduranceCeiling
-        {
-            get
-            {
-                return this.Kind.Endurance;
-            }
-        }
-
-        public int FundCost
-        {
-            get
-            {
-                return this.Kind.FundCost;
-            }
-        }
-
-        public int InfluenceCount
-        {
-            get
-            {
-                return this.Kind.Influences.Count;
-            }
-        }
-
-        public InfluenceTable Influences
-        {
-            get
-            {
-                return this.Kind.Influences;
-            }
-        }
+        public InfluenceTable Influences => Kind.Influences;
         
-        public FacilityKind Kind
-        {
-            get
-            {
-                if (this.kind == null)
-                {
-                    this.kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(this.kindID);
-                }
-                return this.kind;
-            }
-            set
-            {
-                this.kind = value;
-                if (this.kind != null)
-                {
-                    this.kindID = this.kind.ID;
-                }
-            }
-        }
+        public int MaintenanceCost => Kind.MaintenanceCost;
 
-        [DataMember]
-        public int KindID
-        {
-            get
-            {
-                return this.kindID;
-            }
-            set
-            {
-                this.kindID = value;
-            }
-        }
+        public new string Name => Kind.Name;
 
-        public string KindString
-        {
-            get
-            {
-                return this.Kind.Name;
-            }
-        }
+        public int PositionOccupied => Kind.PositionOccupied;
 
-        public int MaintenanceCost
-        {
-            get
-            {
-                return this.Kind.MaintenanceCost;
-            }
-        }
+        public int ArchitectureLimit => Kind.ArchitectureLimit;
 
-        public new string Name
-        {
-            get
-            {
-                return this.KindString;
-            }
-        }
+        public bool bukechaichu => Kind.bukechaichu;
 
-        public int PointCost
-        {
-            get
-            {
-                return this.Kind.PointCost;
-            }
-        }
+        public double AIValue(Architecture architecture) => Kind.AIValue(architecture);
 
-        public int PositionOccupied
-        {
-            get
-            {
-                return this.Kind.PositionOccupied;
-            }
-        }
+        public Dictionary<Condition, float> AIBuildConditionWeight => Kind.AIBuildConditionWeight;
 
-        public int TechnologyNeeded
-        {
-            get
-            {
-                return this.Kind.TechnologyNeeded;
-            }
-        }
+        public int rongna => Kind.rongna;
 
-        public int ArchitectureLimit
-        {
-            get
-            {
-                return this.Kind.ArchitectureLimit;
-            }
-        }
+        public bool IsProfitable => Kind.IsProfitable;
 
-        public int FactionLimit
+        public Facility(int id, int kindId, int endurance)
         {
-            get
-            {
-                return this.Kind.FactionLimit;
-            }
+            ID = id;
+            KindID = kindId;
+            Endurance = endurance;
         }
+    }
 
-        public Architecture location
+    public class FacilityFactory
+    {
+        public Facility Create(int kindId)
         {
-            get
-            {
-                foreach (Architecture a in Session.Current.Scenario.Architectures)
-                {
-                    if (a.Facilities.GameObjects.Contains(this))
-                    {
-                        return a;
-                    }
-                }
-                return null;
-            }
+            var facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(kindId) 
+                               ?? throw new Exception($"未找到id为{kindId}的设施种类，无法建造设施！");
+
+            var id = Session.Current.Scenario.Facilities.GetFreeGameObjectID();
+
+            var facility = new Facility(id, kindId, facilityKind.Endurance);
+
+            return facility;
         }
     }
 }

@@ -245,16 +245,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
+        /// <summary>
+        /// 拆除勾选的设施
+        /// </summary>
         private void FrameFunction_Architecture_AfterGetFacilityToDemolish() // 拆除设施
         {
-            this.CurrentGameObjects = this.CurrentArchitecture.Facilities.GetSelectedList();
-            if (this.CurrentGameObjects != null)
-            {
-                foreach (Facility facility in this.CurrentGameObjects)
-                {
-                    this.CurrentArchitecture.DemolishFacility(facility);
-                }
-            }
+            var facilityToRemove = CurrentArchitecture.Facilities.Where(x => x.Selected).ToList();
+
+            CurrentArchitecture.DemolishFacility(facilityToRemove);
         }
 
         private void FrameFunction_Architecture_AfterGetFriendlyDiplomaticRelation()

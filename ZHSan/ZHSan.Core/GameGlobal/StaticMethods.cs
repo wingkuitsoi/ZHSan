@@ -1,12 +1,11 @@
 ﻿using GameManager;
+using GameObjects;
 using MersenneTwister;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-////using System.Drawing;
+using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 
@@ -596,6 +595,35 @@ namespace GameGlobal
             }
             return zainan;
         }
+
+        /// <summary>
+        /// 获取随机顺序列表(洗牌算法)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static List<T> GetRandomList<T>(List<T> list)
+        {
+            var random = new Random();
+
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(0, i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 将Id保存为字符串
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static string SaveIdToString<T>(IEnumerable<T> items) where T : GameObject
+        {
+            return string.Join(" ", items.Select(x => x.ID));
+        }
     }
 }
-

@@ -597,7 +597,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 function = delegate
                 {
-                    FacilityList list = new FacilityList();
+                    FactionList list = new FactionList();
                     foreach (Faction faction in Session.Current.Scenario.PlayerFactions)
                     {
                         list.Add(faction);

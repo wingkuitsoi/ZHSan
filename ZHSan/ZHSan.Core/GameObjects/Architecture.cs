@@ -73,8 +73,6 @@ namespace GameObjects
 
             Characteristics = new InfluenceTable();
 
-            Facilities = new FacilityList();
-
             FundPacks = new List<FundPack>();
 
             FoodPacks = new List<FoodPack>();
@@ -231,7 +229,7 @@ namespace GameObjects
 
         public ArchitectureList ClosestArchitectures;
 
-        public FacilityList Facilities = new FacilityList();
+        public List<Facility> Facilities { get; private set; } = new();
 
         public List<FundPack> FundPacks = new List<FundPack>();
 
@@ -271,7 +269,6 @@ namespace GameObjects
         [DataMember]
         public string FacilitiesString { get; set; }
 
-        private bool facilityEnabled;
         private int food;
         public bool FrontLine;
         private int fund;
@@ -1438,52 +1435,57 @@ namespace GameObjects
                 {
                     if (AIExtension()) return;
 
-                    //remove useless facilities
+                    // 拆除无用设施
                     if (this.BelongedSection != null && this.BelongedSection.AIDetail != null && this.BelongedSection.AIDetail.AllowFacilityRemoval)
                     {
-                        foreach (Facility i in this.Facilities)
+                        Facility facilityToRemove = null;
+                        foreach (Facility facility in Facilities)
                         {
-                            float value = (float) i.Kind.AIValue(this);
-                            foreach (KeyValuePair<Condition, float> weight in i.Kind.AIBuildConditionWeight)
+                            float value = (float) facility.AIValue(this);
+                            foreach (var weight in facility.AIBuildConditionWeight)
                             {
                                 if (weight.Key.CheckCondition(this))
                                 {
                                     value *= weight.Value;
                                 }
                             }
-                            if (value < 0 && this.CanRemoveFacility(i) && i.Kind.rongna == 0)
+
+                            // TODO：后宫相关设施都设置为不可拆除还需判断rongna==0？
+                            if (value < 0 && CanRemoveFacility(facility) && facility.rongna == 0)
                             {
-                                if (this.FacilityEnabled || i.MaintenanceCost <= 0)
-                                {
-                                    i.Influences.PurifyInfluence(this, Applier.Facility, i.ID);
-                                }
-                                this.Facilities.Remove(i);
-                                Session.Current.Scenario.Facilities.Remove(i);
+                                facilityToRemove = facility;
                                 break;
                             }
                         }
-                    }
-                    //remove facilities if not enough fund to support
-                    if (this.FacilityMaintenanceCost * 30 + 100 > this.ExpectedFund && this.BelongedSection.AIDetail.AllowFacilityRemoval)
-                    {
-                        GameObjectList f = this.Facilities.GetList();
-                        f.PropertyName = "AIValue";
-                        f.SmallToBig = true;
-                        f.IsNumber = true;
-                        f.ReSort();
-                        foreach (Facility i in f)
+
+                        if (facilityToRemove != null)
                         {
-                            if (this.CanRemoveFacility(i) && !i.Kind.IsProfitable && i.Kind.rongna == 0)
-                            {
-                                if (this.FacilityEnabled || i.MaintenanceCost <= 0)
-                                {
-                                    i.Influences.PurifyInfluence(this, Applier.Facility, i.ID);
-                                }
-                                this.Facilities.Remove(i);
-                                Session.Current.Scenario.Facilities.Remove(i);
-                            }
-                            if (this.FacilityMaintenanceCost * 30 + 100 <= this.ExpectedFund) break;
+                            DemolishFacility(facilityToRemove);
                         }
+                    }
+
+                    // 如果资金不足以维持，则拆徐设施
+                    var facilityCost = FacilityMaintenanceCost * 30 + 100;
+
+                    if (facilityCost > ExpectedFund && BelongedSection.AIDetail.AllowFacilityRemoval)
+                    {
+                        var facilityToRemove = new List<Facility>();
+
+                        var sortedByAiValue = Facilities.OrderBy(x => x.AIValue(this)).ToList();
+
+                        foreach (Facility facility in sortedByAiValue)
+                        {
+                            if (CanRemoveFacility(facility) && !facility.IsProfitable && facility.rongna == 0)
+                            {
+                                facilityToRemove.Add(facility);
+
+                                facilityCost -= facility.MaintenanceCost;
+                                
+                                if (facilityCost <= ExpectedFund) break;
+                            }
+                        }
+
+                        DemolishFacility(facilityToRemove);
                     }
 
                     //choose facilities
@@ -1523,18 +1525,20 @@ namespace GameObjects
                                     {
                                         int fpl = this.FacilityPositionLeft;
                                         toDestroy.Clear();
-                                        foreach (Facility f in this.Facilities.GetRandomList())
+
+                                        foreach (Facility facility in StaticMethods.GetRandomList(Facilities))
                                         {
-                                            if (value > f.Kind.AIValue(this) * Session.Parameters.AIFacilityDestroyValueRate && this.CanRemoveFacility(f) && f.Kind.rongna == 0)
+                                            if (value > facility.AIValue(this) * Session.Parameters.AIFacilityDestroyValueRate && this.CanRemoveFacility(facility) && facility.rongna == 0)
                                             {
-                                                toDestroy.Add(f);
-                                                fpl += f.Kind.PositionOccupied;
+                                                toDestroy.Add(facility);
+                                                fpl += facility.PositionOccupied;
                                                 if (fpl >= kind.PositionOccupied)
                                                 {
                                                     break;
                                                 }
                                             }
                                         }
+
                                         if (fpl >= kind.PositionOccupied)
                                         {
                                             maxValue = value;
@@ -1561,16 +1565,9 @@ namespace GameObjects
                     }
                     if (toBuild != null)
                     {
-                        //if no space and the facility is good enough than others, remove others
-                        foreach (Facility f in realToDestroy)
-                        {
-                            if (this.FacilityEnabled || f.MaintenanceCost <= 0)
-                            {
-                                f.Influences.PurifyInfluence(this, Applier.Facility, f.ID);
-                            }
-                            this.Facilities.Remove(f);
-                            Session.Current.Scenario.Facilities.Remove(f);
-                        }
+                        // 替换更好的设施
+                        DemolishFacility(realToDestroy);
+
                         if (toBuild.PositionOccupied <= this.FacilityPositionLeft)
                         {
                             //actually build it, or put to plan if fund is not enough
@@ -1625,7 +1622,7 @@ namespace GameObjects
                     }
                     if (facilityPositionLeft <= 0)
                     {
-                        foreach (Facility facility in this.Facilities.GetList())
+                        foreach (Facility facility in this.Facilities)
                         {
                             if ((((this.Technology > facility.TechnologyNeeded) && this.FacilityIsPossibleOverTechnology(facility.TechnologyNeeded))
                                 && ((this.Fund > (facility.FundCost * 10)) && (this.BelongedFaction.TechniquePoint > (facility.PointCost * 10))))
@@ -1637,12 +1634,8 @@ namespace GameObjects
                                     continue;
                                 }
                                 list3.Add(facility.Kind);
-                                if (this.FacilityEnabled)
-                                {
-                                    facility.Influences.PurifyInfluence(this);
-                                }
-                                this.Facilities.Remove(facility);
-                                Session.Current.Scenario.Facilities.Remove(facility);
+                                
+                                DemolishFacility(facility);
                             }
                         }
                         if (list3.Count == 0)
@@ -3927,11 +3920,11 @@ namespace GameObjects
 
         public void ApplyFacilityInfluences(bool skipNoCostFacility)
         {
-            foreach (Facility facility in this.Facilities)
+            foreach (Facility facility in Facilities)
             {
                 if (!skipNoCostFacility || facility.MaintenanceCost > 0)
                 {
-                    if (this.FacilityEnabled || facility.MaintenanceCost <= 0)
+                    if (FacilityEnabled || facility.MaintenanceCost <= 0)
                     {
                         facility.Influences.ApplyInfluence(this, Applier.Facility, facility.ID);
                     }
@@ -3939,92 +3932,59 @@ namespace GameObjects
             }
         }
 
-        public int GetFacilityKindCount(int id)
+        /// <summary>
+        /// 获取某种类设施总数
+        /// </summary>
+        /// <param name="facilityKindId">设施种类Id</param>
+        /// <param name="includeBuilding">包含在建设施</param>
+        /// <returns></returns>
+        public int GetFacilityKindCount(int facilityKindId, bool includeBuilding = true)
         {
-            int cnt = 0;
-            foreach (Facility facility in this.Facilities)
+            var count = Facilities.Count(x => x.KindID == facilityKindId);
+
+            if (includeBuilding)
             {
-                if (facility.KindID == id || this.BuildingFacility == id)
-                {
-                    cnt++;
-                }
+                var buildingCount = BuildingFacility == facilityKindId ? 1 : 0;
+
+                count += buildingCount;
             }
-            return cnt;
+
+            return count;
         }
-        //以下添加20170426
-        public int GetFacilityCountForKind(int id)
+
+        #region  建筑详情ArchitectureDetail
+
+        public Facility GetFacilityByKindId(int kindId)
         {
-            int cnt = 0;
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    cnt++;
-                }
-            }
-            return cnt;
+            var facility = Facilities.FirstOrDefault(x => x.KindID == kindId);
+
+            return facility;
         }
-        public string GetFacilityNameForKind(int id)
+
+        /// <summary>
+        /// 获取设施列表
+        /// </summary>
+        /// <param name="kindId"></param>
+        /// <returns></returns>
+        public List<Facility> GetFacilities(int kindId)
         {
-            string N = "";
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    N = facility.Name;
-                }
-            }
-            return N;
+            return Facilities.Where(x => x.KindID == kindId).ToList();
         }
-        public string GetFacilityDescriptionForKind(int id)
+
+        public string GetFacilityDescriptionForKind(int facilityKindId)
         {
-            string D = "";
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    D = facility.Description;
-                }
-            }
-            return D;
+            var facility = Facilities.FirstOrDefault(x => x.KindID == facilityKindId);
+
+            return facility?.Description ?? "";
         }
-        public int GetFacilityPositionOccupiedForKind(int id)
+
+        public bool HasTheFacilityForKind(int kindId)
         {
-            int D = -1;
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    D = facility.PositionOccupied;
-                }
-            }
-            return D;
+            return Facilities.Any(x => x.KindID == kindId);
         }
-        public int GetFacilityMaintenanceCostForKind(int id)
-        {
-            int D = -1;
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    D = facility.MaintenanceCost;
-                }
-            }
-            return D;
-        }
-        public bool HasTheFacilityForKind(int id)
-        {
-            bool H = false;
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.KindID == id)
-                {
-                    H = true;
-                }
-            }
-            return H;
-        }
-        //
+
+        #endregion
+
         public string ArmyQuantityInInformationLevel(InformationLevel level)
         {
             switch (level)
@@ -4181,14 +4141,19 @@ namespace GameObjects
             this.BuildingDaysLeft = 0;
         }
 
+        /// <summary>
+        /// 建造设施
+        /// </summary>
+        /// <param name="facilityKind"></param>
         public void BuildFacility(FacilityKind facilityKind)
         {
-            Facility facility = new Facility();
-            facility.ID = Session.Current.Scenario.Facilities.GetFreeGameObjectID();
-            facility.KindID = facilityKind.ID;
-            facility.Endurance = facilityKind.Endurance;
-            this.Facilities.AddFacility(facility);
-            Session.Current.Scenario.Facilities.AddFacility(facility);
+            var facilityFactory = new FacilityFactory();
+
+            Facility facility = facilityFactory.Create(facilityKind.ID);
+            
+            Facilities.Add(facility);
+
+            Session.Current.Scenario.Facilities.Add(facility);
             if (this.FacilityEnabled)
             {
                 facility.Influences.ApplyInfluence(this, Applier.Facility, facility.ID);
@@ -6201,7 +6166,7 @@ namespace GameObjects
             }
             this.Endurance -= endurance;
             this.SetRecentlyAttacked();
-            this.DecreaseFacilityEndurance(endurance);
+            DecreaseFacilityEndurance(endurance);
             if (this.Endurance == 0)
             {
                 this.RecentlyBreaked = 30;
@@ -6210,18 +6175,28 @@ namespace GameObjects
             return endurance;
         }
 
+        /// <summary>
+        /// 降低设施耐久
+        /// </summary>
+        /// <param name="decrement"></param>
         public void DecreaseFacilityEndurance(int decrement)
         {
             if (decrement > 0)
             {
-                this.Facilities.DecreaseEndurance((int)(decrement * this.RateOfFacilityEnduranceDown));
-                foreach (Facility facility in this.Facilities.GetList())
+                var facilityToRemove = new List<Facility>();
+                var mitigatedDecrement = (int)(decrement * RateOfFacilityEnduranceDown);
+
+                foreach (Facility facility in Facilities)
                 {
+                    if (CanRemoveFacility(facility))
+                        facility.DecreaseEndurance(mitigatedDecrement);
+
+                    // 设施耐久低于0则拆除
                     if (facility.Endurance <= 0)
-                    {
-                        this.DemolishFacility(facility);
-                    }
+                        facilityToRemove.Add(facility);
                 }
+
+                DemolishFacility(facilityToRemove);
             }
         }
 
@@ -6625,15 +6600,34 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 拆除设施
+        /// </summary>
+        /// <param name="facility"></param>
         public void DemolishFacility(Facility facility)
         {
-            if (this.FacilityEnabled || facility.MaintenanceCost <= 0)
+            // 消除影响
+            if (FacilityEnabled || facility.MaintenanceCost <= 0)
             {
                 facility.Influences.PurifyInfluence(this, Applier.Facility, facility.ID);
             }
-            this.Facilities.Remove(facility);
+
+            Facilities.Remove(facility);
             Session.Current.Scenario.Facilities.Remove(facility);
+
             ExtensionInterface.call("FacilityDemolished", new Object[] { Session.Current.Scenario, this, facility });
+        }
+
+        /// <summary>
+        /// 批量拆除设施
+        /// </summary>
+        /// <param name="facilities"></param>
+        public void DemolishFacility(List<Facility> facilities)
+        {
+            foreach (var facility in facilities)
+            {
+                DemolishFacility(facility);
+            }
         }
 
         public bool DestroyAvail()
@@ -7222,9 +7216,9 @@ namespace GameObjects
 
         private void FacilityDoWork()
         {
-            foreach (Facility facility in this.Facilities)
+            foreach (Facility facility in Facilities)
             {
-                if (this.FacilityEnabled || facility.MaintenanceCost <= 0)
+                if (FacilityEnabled || facility.MaintenanceCost <= 0)
                 {
                     facility.DoWork(this);
                 }
@@ -7247,11 +7241,17 @@ namespace GameObjects
             }
         }
 
-        private void FacilityRecovery()
+        /// <summary>
+        /// 恢复设施耐久
+        /// </summary>
+        private void RecoverFacilityEndurance()
         {
-            if (this.FacilityEnabled)
+            if (FacilityEnabled)
             {
-                this.Facilities.RecoverEndurance(this.facilityEnduranceIncrease);
+                foreach (Facility facility in Facilities)
+                {
+                    facility.RecoverEndurance(facilityEnduranceIncrease);
+                }
             }
         }
 
@@ -8944,7 +8944,7 @@ namespace GameObjects
         {
             this.CheckBuildingFacility();
             this.FacilityMaintenance();
-            this.FacilityRecovery();
+            this.RecoverFacilityEndurance();
             this.FacilityDoWork();
         }
 
@@ -9056,10 +9056,7 @@ namespace GameObjects
         {
             return (this.FacilityCount > 0);
         }
-        public bool HaskechaichuFacility()
-        {
-            return (this.kechaichudesheshi().Count > 0);
-        }
+        
         public bool HasFaction()
         {
             return (this.BelongedFaction != null);
@@ -10268,31 +10265,41 @@ namespace GameObjects
             return errorMsg;
         }
 
-        public List<string> LoadFacilitiesFromString(FacilityList facilities, string dataString)
+        /// <summary>
+        /// 加载设施
+        /// </summary>
+        /// <param name="facilities"></param>
+        /// <param name="facilityIds"></param>
+        /// <returns></returns>
+        public List<string> LoadFacilitiesFromString(FacilityList facilities, string facilityIds)
         {
             List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Facilities.Clear();
-            try
+
+            var ids = facilityIds.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            var id = 0;
+            var facilitieList = new List<Facility>();
+
+            foreach (var idStr in ids)
             {
-                foreach (string str in strArray)
+                if (int.TryParse(idStr, out id))
                 {
-                    Facility gameObject = facilities.GetGameObject(int.Parse(str)) as Facility;
-                    if (gameObject != null)
+                    var facility = facilities.GetGameObject(id) as Facility;
+
+                    if (facility != null)
                     {
-                        this.Facilities.AddFacility(gameObject);
+                        facilitieList.Add(facility);
                     }
-                    else
-                    {
-                        errorMsg.Add("設施ID" + str + "不存在");
-                    }
+                        
+                }
+                else
+                {
+                    errorMsg.Add($"設施ID: {idStr}不存在");
                 }
             }
-            catch
-            {
-                errorMsg.Add("設施列表一栏应为半型空格分隔的設施ID");
-            }
+
+            Facilities = facilitieList;
+
             return errorMsg;
         }
 
@@ -11403,7 +11410,7 @@ namespace GameObjects
 
         public void PurifyFacilityInfluences()
         {
-            foreach (Facility facility in this.Facilities)
+            foreach (Facility facility in Facilities)
             {
                 if (facility.MaintenanceCost > 0)
                 {
@@ -13506,25 +13513,10 @@ namespace GameObjects
             }
         }
 
-        public int FacilityCount
-        {
-            get
-            {
-                return this.Facilities.Count;
-            }
-        }
+        public int FacilityCount => Facilities.Count;
+        
         [DataMember]
-        public bool FacilityEnabled
-        {
-            get
-            {
-                return this.facilityEnabled;
-            }
-            set
-            {
-                this.facilityEnabled = value;
-            }
-        }
+        public bool FacilityEnabled { get; set; }
 
         public string FacilityEnabledString
         {
@@ -13534,19 +13526,22 @@ namespace GameObjects
             }
         }
 
+        // 设施维持费用
         public int FacilityMaintenanceCost
         {
             get
             {
                 int num = 0;
-                foreach (Facility facility in this.Facilities)
+                foreach (Facility facility in Facilities)
                 {
                     num += facility.MaintenanceCost;
                 }
 
-                if (this.Feiziliebiao.Count > 0 && (this.BelongedFaction == null || !this.BelongedFaction.IsAlien))
+                // 添加妃子的维持费用
+                var princessCount = Feiziliebiao.Count;
+                if (princessCount > 0 && (BelongedFaction == null || !BelongedFaction.IsAlien))
                 {
-                    num += this.Feiziliebiao.Count * Session.Parameters.PrincessMaintainenceCost;
+                    num += princessCount * Session.Parameters.PrincessMaintainenceCost;
                 }
 
                 return num;
@@ -15116,18 +15111,7 @@ namespace GameObjects
             return result;
         }
 
-        public int Meinvkongjian
-        {
-            get
-            {
-                int kongjian = 0;
-                foreach (Facility facility in this.Facilities)
-                {
-                    kongjian += facility.Kind.rongna;
-                }
-                return kongjian;
-            }
-        }
+        public int Meinvkongjian => Facilities.Sum(x => x.rongna);
 
         public string meinvkongjianzifu
         {
@@ -15137,24 +15121,45 @@ namespace GameObjects
             }
         }
 
-        public bool CanRemoveFacility(Facility f)
+        public bool CanRemoveFacility(Facility facility)
         {
-            if (f.Kind.bukechaichu) return false;
+            if (facility.bukechaichu) return false;
             // if (this.Meinvkongjian - this.Feiziliebiao.Count < f.Kind.rongna && this.BelongedFaction != null && !this.BelongedFaction.IsAlien) return false;
             return true;
         }
 
-        public FacilityList kechaichudesheshi()
+        /// <summary>
+        /// 获取可拆除设施列表
+        /// </summary>
+        /// <returns></returns>
+        public FacilityList GetCanRemoveFacilities()
         {
-            FacilityList kechaichu = new FacilityList();
-            foreach (Facility facility in this.Facilities)
+            var facilityCanRemove = Facilities.Where(CanRemoveFacility).ToList();
+
+            var facilities = new FacilityList();
+
+            foreach (var facility in facilityCanRemove)
             {
-                if (this.CanRemoveFacility(facility))
-                {
-                    kechaichu.Add(facility);
-                }
+                facilities.Add(facility);
             }
-            return kechaichu;
+
+            return facilities;
+        }
+
+        /// <summary>
+        /// 获取设施列表
+        /// </summary>
+        /// <returns></returns>
+        public FacilityList GetFacilityList()
+        {
+            var facilities = new FacilityList();
+
+            foreach (var facility in Facilities)
+            {
+                facilities.Add(facility);
+            }
+
+            return facilities;
         }
 
         public PersonList yihuaiyundefeiziliebiao()
@@ -15688,9 +15693,9 @@ namespace GameObjects
         {
             var results = new List<Facility>();
             
-            foreach (Facility facility in this.Facilities)
+            foreach (Facility facility in Facilities)
             {
-                if (facility.Kind.Influences.HasInfluenceKind(3530))
+                if (facility.Influences.HasInfluenceKind(3530))
                 {
                     results.Add(facility);
                 }
@@ -15706,7 +15711,7 @@ namespace GameObjects
             var groupsToCreate = new HashSet<TreasureCreationSetting>();
             foreach (Facility facility in facilities)
             {
-                foreach (Influence influence in facility.Kind.Influences.Influences.Values)
+                foreach (Influence influence in facility.Influences.Influences.Values)
                 {
                     if (influence.Kind.ID == 3530)
                     {
@@ -15948,27 +15953,16 @@ namespace GameObjects
             return list;
         }
 
-        public bool HasPub()
-        {
-            foreach (Facility facility in this.Facilities)
-            {
-                if (facility.Kind.Influences.HasInfluenceKind(3520))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        public bool HasPub() => Facilities.Any(x => x.Influences.HasInfluenceKind(3520));
 
         public int GetPubCost()
         {
             var cost = int.MaxValue;
-            foreach (Facility facility in this.Facilities)
+            foreach (Facility facility in Facilities)
             {
-                if (facility.Kind.Influences.HasInfluenceKind(3520))
+                if (facility.Influences.HasInfluenceKind(3520))
                 {
-                    List<Influence> inf = facility.Kind.Influences.GetInfluenceByKind(3520);
+                    List<Influence> inf = facility.Influences.GetInfluenceByKind(3520);
                     foreach (var i in inf)
                     {
                         var thisCost = int.Parse(i.Parameter);

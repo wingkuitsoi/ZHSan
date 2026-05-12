@@ -140,7 +140,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Architecture_Facilities:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.Facilities.GetList(), null, "", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.GetFacilityList(), null, "", "");
                     break;
 
                 case ContextMenuResult.Architecture_Captive:
@@ -326,7 +326,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Internal_Facility_Demolish:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToDemolish, false, true, true, true, this.CurrentArchitecture.kechaichudesheshi(), null, "选择设施", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToDemolish, false, true, true, true, CurrentArchitecture.GetCanRemoveFacilities(), null, "选择设施", "");
                     break;
                     
                 case ContextMenuResult.Internal_Facility_StopBuilding:

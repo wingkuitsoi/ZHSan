@@ -1301,42 +1301,37 @@ namespace GameObjects
                         }
                         if (hougong != null)
                         {
+                            var positionOccupied = hougong.PositionOccupied;
+
                             int facilityPositionLeft = buildAt.FacilityPositionLeft;
-                            if (facilityPositionLeft < hougong.PositionOccupied && buildAt.FacilityPositionCount >= hougong.PositionOccupied)
+                            if (facilityPositionLeft < positionOccupied && buildAt.FacilityPositionCount >= positionOccupied)
                             {
-                                FacilityList fl = new FacilityList();
-                                foreach (Facility f in buildAt.Facilities)
+                                var facilities = new List<Facility>();
+
+                                // TODO：buildAt即为当前建筑，无需再通过设施获取所属建筑
+                                foreach (Facility facility in buildAt.Facilities)
                                 {
-                                    if (f.location.CanRemoveFacility(f))
-                                    {
-                                        fl.Add(f);
-                                    }
+                                    if (buildAt.CanRemoveFacility(facility))
+                                        facilities.Add(facility);
                                 }
 
-                                int totalRemovableSpace = 0;
-                                foreach (Facility f in fl)
+                                var totalRemovableSpace = facilities.Sum(x => x.PositionOccupied);
+                                if (totalRemovableSpace >= positionOccupied)
                                 {
-                                    totalRemovableSpace += f.PositionOccupied;
-                                }
+                                    int removePositionOccupied = 0;
+                                    var facilityToRemove = new List<Facility>();
+                                    var sortedByAiValue = facilities.OrderBy((Facility x) => x.AIValue(buildAt)).ToList();
 
-                                if (totalRemovableSpace >= hougong.PositionOccupied)
-                                {
-                                    fl.PropertyName = "AIValue";
-                                    fl.IsNumber = true;
-                                    fl.SmallToBig = true;
-                                    fl.ReSort();
-
-                                    while (buildAt.FacilityPositionLeft < hougong.PositionOccupied && fl.Count > 0)
+                                    foreach (Facility facility in sortedByAiValue)
                                     {
-                                        Facility f = fl[0] as Facility;
-                                        if (buildAt.FacilityEnabled || f.MaintenanceCost <= 0)
-                                        {
-                                            f.Influences.PurifyInfluence(this, Applier.Facility, f.ID);
-                                        }
-                                        buildAt.Facilities.Remove(f);
-                                        Session.Current.Scenario.Facilities.Remove(f);
-                                        fl.Remove(f);
+                                        facilityToRemove.Add(facility);
+
+                                        removePositionOccupied += facility.PositionOccupied;
+
+                                        if (removePositionOccupied >= positionOccupied) break;
                                     }
+
+                                    buildAt.DemolishFacility(facilityToRemove);
                                 }
 
                                 facilityPositionLeft = buildAt.FacilityPositionLeft;
