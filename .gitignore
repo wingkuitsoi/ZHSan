@@ -314,3 +314,6 @@ MODs
 
 # Mac
 .DS_Store
+
+# OmniSharp / VS Code C#
+*.csproj.lscache

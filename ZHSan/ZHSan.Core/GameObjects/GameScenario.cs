@@ -3425,7 +3425,7 @@ namespace GameObjects
                 //architecture.FacilitiesString = reader["Facilities"].ToString();
 
                 e.AddRange(architecture.LoadMilitariesFromString(this.Militaries, architecture.MilitariesString));
-                e.AddRange(architecture.LoadFacilitiesFromString(Facilities, architecture.FacilitiesString));
+                architecture.LoadFacilitiesFromString(Facilities, architecture.FacilitiesString);
 
                 //architecture.FundPacksString = reader["FundPacks"].ToString();
 

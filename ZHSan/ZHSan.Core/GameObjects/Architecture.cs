@@ -16,6 +16,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Linq;
 using GameEvents;
+using Serilog;
 
 namespace GameObjects
 {
@@ -29,6 +30,8 @@ namespace GameObjects
         /// 事件管理器
         /// </summary>
         private EventManager eventManager;
+
+        private static ILogger logger;
 
         class SimulatingFightingForceComparer : IComparer<Troop>
         {
@@ -49,6 +52,8 @@ namespace GameObjects
         public void Init()
         {
             eventManager = EventManager.Instance;
+
+            logger = Log.ForContext<Architecture>();
 
             AIAllLinkNodes = new Dictionary<int, LinkNode>();
 
@@ -10271,12 +10276,12 @@ namespace GameObjects
         /// <param name="facilities"></param>
         /// <param name="facilityIds"></param>
         /// <returns></returns>
-        public List<string> LoadFacilitiesFromString(FacilityList facilities, string facilityIds)
+        public void LoadFacilitiesFromString(FacilityList facilities, string facilityIds)
         {
-            List<string> errorMsg = new List<string>();
+            List<string> noExistsIds = new List<string>();
 
             var ids = facilityIds.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-
+            
             var id = 0;
             var facilitieList = new List<Facility>();
 
@@ -10294,13 +10299,17 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add($"設施ID: {idStr}不存在");
+                    noExistsIds.Add(idStr);
+                    
                 }
             }
 
             Facilities = facilitieList;
 
-            return errorMsg;
+            if (noExistsIds.Count > 0)
+            {
+                logger.Error($"建筑Id:[{this.ID}]的設施Id: {string.Join(",", noExistsIds)}不存在");
+            }
         }
 
         public List<string> LoadFundPacksFromString(string dataString)

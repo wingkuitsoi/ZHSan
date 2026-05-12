@@ -1,105 +1,71 @@
-﻿using GameManager;
-using Platforms;
+﻿using Platforms;
 using System;
 using System.IO;
-using System.Threading;
 using Microsoft.Xna.Framework.Input;
+using Serilog;
+using System.Text;
 
-namespace WorldOfTheThreeKingdoms
+namespace WorldOfTheThreeKingdoms;
+
+public static class Program
 {
-    /// <summary>
-    /// The main class.
-    /// </summary>
-    public static class Program
+    [STAThread]
+    static void Main()
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        [STAThread]
-        static void Main()
+
+        Console.OutputEncoding = Encoding.UTF8;
+        /*bool flag;
+        Mutex mutex = new Mutex(true, "WorldOfTheThreeKingdoms", out flag);
+        if (!flag)
         {
-            /*bool flag;
-            Mutex mutex = new Mutex(true, "WorldOfTheThreeKingdoms", out flag);
-            if (!flag)
-            {
-                MessageBox.Show("游戏已经在运行中。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-            }
-            else
-            {
-                mutex.ReleaseMutex();
-                new MainProcessManager().Processing();
-            }*/
+            MessageBox.Show("游戏已经在运行中。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+        else
+        {
+            mutex.ReleaseMutex();
+            new MainProcessManager().Processing();
+        }*/
 
-            string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            Directory.SetCurrentDirectory(exeDir);
+        // 配置Seriol日志
+        var logTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} - {Message:lj}{NewLine}{Exception}";
 
-            if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
+        Log.Logger = new LoggerConfiguration()
+                            .MinimumLevel.Debug()
+                            .WriteTo.Console(outputTemplate: logTemplate)
+                            .WriteTo.File("logs/game.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 3, outputTemplate: logTemplate)
+                            .CreateLogger();
+
+        string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        Directory.SetCurrentDirectory(exeDir);
+
+        if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
+        {
+            using (MainGame game = new MainGame())
             {
-                //AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(ExceptionHandler);
-                
-                using (MainGame game = new MainGame())
+                if (System.Diagnostics.Debugger.IsAttached)
                 {
-                    if (System.Diagnostics.Debugger.IsAttached)
+                    game.Run();
+                }
+                else
+                {
+                    try
                     {
                         game.Run();
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        try
-                        {
-                            game.Run();
-                        }
-                        catch (Exception ex)
-                        {
-                            PrintError(ex);
-                        }
+                        Log.Error(ex.Message);
+
+                        MessageBox.Show("游戏错误", "中华三国志遇到严重错误，请提交游戏目录/logs/下的日志文件。", ["OK"]);
                     }
                 }
             }
-            else if (Platform.PlatFormType == PlatFormType.UWP)
-            {
-                Platform.Current.OpenFactory();
-            }
         }
-
-        static void UIExceptionHandler(object sender, ThreadExceptionEventArgs args)
+        else if (Platform.PlatFormType == PlatFormType.UWP)
         {
-            Exception e = (Exception)args.Exception;
-            PrintError(e);
+            Platform.Current.OpenFactory();
         }
 
-        static void ExceptionHandler(object sender, UnhandledExceptionEventArgs args)
-        {
-            Exception e = (Exception)args.ExceptionObject;
-            PrintError(e);
-        }
-
-        public static void PrintError(Exception e)
-        {
-            DateTime dt = System.DateTime.Now;
-            String dateSuffix = "_" + dt.Year + "_" + dt.Month + "_" + dt.Day + "_" + dt.Hour + "h" + dt.Minute;
-            String logPath = "CrashLog" + dateSuffix + ".log";
-            StreamWriter sw = new StreamWriter(new FileStream(logPath, FileMode.Create));
-
-            sw.WriteLine("==================== Message ====================");
-            sw.WriteLine(e.Message);
-            sw.WriteLine("=================== StackTrace ==================");
-            sw.WriteLine(e.StackTrace);
-
-            sw.Close();
-
-            //String savePath = "CrashSave" + dateSuffix + (Session.GlobalVariables.EncryptSave ? ".zhs" : ".mdb");
-            //try
-            //{
-            //    Session.MainGame.SaveGameWhenCrash(savePath);
-            //}
-            //catch (Exception eSave)
-            //{
-            //    // 保存失败，这里要做什么好？
-            //}
-
-            MessageBox.Show("游戏错误", "中华三国志遇到严重错误，请提交游戏目录下的'" + logPath + "'。", new []{"OK"});
-        }
-
+        Log.CloseAndFlush();
     }
 }
