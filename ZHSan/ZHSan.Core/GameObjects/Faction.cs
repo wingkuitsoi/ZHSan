@@ -7316,7 +7316,7 @@ namespace GameObjects
                     {
                         if (j.faction == this)
                         {
-                            result += i.Value;
+                            result += i.GetFloatParam();
                         }
                     }
                 }

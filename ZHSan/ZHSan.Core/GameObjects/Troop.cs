@@ -14374,7 +14374,7 @@ namespace GameObjects
                     {
                         if (j.troop == this)
                         {
-                            result += i.Value;
+                            result += i.GetFloatParam();
                         }
                     }
                 }

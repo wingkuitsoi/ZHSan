@@ -15524,7 +15524,7 @@ namespace GameObjects
                     {
                         if (j.arch == this)
                         {
-                            result += i.Value;
+                            result += i.GetFloatParam();
                         }
                     }
                 }

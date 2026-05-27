@@ -11812,7 +11812,7 @@ namespace GameObjects
                     {
                         if (j.person == this && j.applier == Applier.Treasure)
                         {
-                            result += i.Value;
+                            result += i.GetFloatParam();
                         }
                     }
                 }
@@ -11961,7 +11961,7 @@ namespace GameObjects
         /// 临时状态
         /// </summary>
         [DataMember]
-        private Dictionary<int, int> statusEffects;
+        private Dictionary<int, int> statusEffects = new();
 
         /// <summary>
         /// 获取临时状态列表
