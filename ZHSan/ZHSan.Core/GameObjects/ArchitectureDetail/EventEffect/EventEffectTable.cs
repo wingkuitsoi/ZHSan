@@ -1,83 +1,51 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffectTable
 {
-    [DataContract]
-    public class EventEffectTable
+    [DataMember]
+    public Dictionary<int, EventEffect> EventEffects = new Dictionary<int, EventEffect>();
+
+    /// <summary>
+    /// 新增
+    /// </summary>
+    /// <param name="eventEffect"></param>
+    /// <returns></returns>
+    public bool Add(EventEffect eventEffect)
     {
-        [DataMember]
-        public Dictionary<int, EventEffect> EventEffects = new Dictionary<int, EventEffect>();
-
-        public bool AddEventEffect(EventEffect e)
-        {
-            if (this.EventEffects.ContainsKey(e.ID))
-            {
-                return false;
-            }
-            this.EventEffects.Add(e.ID, e);
-            return true;
-        }
-
-        public void Clear()
-        {
-            this.EventEffects.Clear();
-        }
-
-        public EventEffect GetEventEffect(int id)
-        {
-            EventEffect effect = null;
-            this.EventEffects.TryGetValue(id, out effect);
-            return effect;
-        }
-
-        public GameObjectList GetEventEffectList()
-        {
-            GameObjectList list = new GameObjectList();
-            foreach (EventEffect effect in this.EventEffects.Values)
-            {
-                list.Add(effect);
-            }
-            return list;
-        }
-
-        public bool HasEventEffect(int id)
-        {
-            return this.EventEffects.ContainsKey(id);
-        }
-
-        public void LoadFromString(EventEffectTable allEventEffects, string influenceIDs)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = influenceIDs.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            EventEffect effect = null;
-            for (int i = 0; i < strArray.Length; i++)
-            {
-                if (allEventEffects.EventEffects.TryGetValue(int.Parse(strArray[i]), out effect))
-                {
-                    this.AddEventEffect(effect);
-                }
-            }
-        }
-
-        public string SaveToString()
-        {
-            string str = "";
-            foreach (EventEffect effect in this.EventEffects.Values)
-            {
-                str = str + effect.ID.ToString() + " ";
-            }
-            return str;
-        }
-
-        public int Count
-        {
-            get
-            {
-                return this.EventEffects.Count;
-            }
-        }
+        return EventEffects.TryAdd(eventEffect.ID, eventEffect);
     }
-}
 
+    /// <summary>
+    /// 删除
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public bool Remove(int id)
+    {
+        return EventEffects.Remove(id);
+    }
+
+    /// <summary>
+    /// 查找
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public EventEffect Get(int id)
+    {
+        EventEffects.TryGetValue(id, out var effect);
+
+        return effect;
+    }
+
+    public int Count => EventEffects.Count;
+
+    public void Clear() => EventEffects.Clear();
+
+    public GameObjectList GetEventEffectList() => [.. EventEffects.Values];
+
+    public bool HasEventEffect(int id) => EventEffects.ContainsKey(id);
+}

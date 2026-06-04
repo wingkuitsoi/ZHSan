@@ -1,35 +1,17 @@
 ﻿using GameManager;
-using GameObjects;
 using GameObjects.PersonDetail;
-using System;
-using System.Collections.Generic;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect310 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect310 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(eventEffect.GetIntParam());
+        if (title == null) return;
 
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            Title title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(increment);
-            if (title == null) return;
-
-            person.LearnTitle(title);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        person.LearnTitle(title);
     }
 }
-

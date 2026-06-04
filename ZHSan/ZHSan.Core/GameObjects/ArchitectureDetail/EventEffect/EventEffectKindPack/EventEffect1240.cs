@@ -1,32 +1,18 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
+using GameObjects.Influences;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1240 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1240 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int id;
+        var influence = Session.Current.Scenario.GameCommonData.AllInfluences.GetInfluence(eventEffect.GetIntParam());
 
-        public override void ApplyEffectKind(Architecture a, Event e)
-        {
-            a.Characteristics.PurifyInfluence(a, GameObjects.Influences.Applier.Characteristics, 0);
-            a.Characteristics.AddInfluence(Session.Current.Scenario.GameCommonData.AllInfluences.GetInfluence(id));
-            a.Characteristics.ApplyInfluence(a, GameObjects.Influences.Applier.Characteristics, 0);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        arch.Characteristics.PurifyInfluence(arch, Applier.Characteristics, 0);
+        arch.Characteristics.AddInfluence(influence);
+        arch.Characteristics.ApplyInfluence(arch, Applier.Characteristics, 0);
     }
 }
-

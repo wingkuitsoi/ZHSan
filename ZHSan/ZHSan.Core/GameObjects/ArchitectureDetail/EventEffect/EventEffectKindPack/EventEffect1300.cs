@@ -1,36 +1,25 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1300 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1300 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int id;
+        var disaster = arch.zainan;
+        var disasterKind = disaster.zainanzhonglei;
+        
+        disasterKind = Session.Current.Scenario.GameCommonData.suoyouzainanzhonglei.Getzainanzhonglei(eventEffect.GetIntParam());
 
-        public override void ApplyEffectKind(Architecture a, Event e)
-        {
-            a.zainan.zainanzhonglei = Session.Current.Scenario.GameCommonData.suoyouzainanzhonglei.Getzainanzhonglei(id);
-            a.zainan.shengyutianshu = a.zainan.zainanzhonglei.shijianxiaxian + GameObject.Random(a.zainan.zainanzhonglei.shijianshangxian - a.zainan.zainanzhonglei.shijianxiaxian);
-            a.youzainan = true;
-            foreach (Military military in a.Militaries)//发生灾难时不能补充
-            {
-                military.StopRecruitment();
-            }
-        }
+        var range = disasterKind.shijianshangxian - disasterKind.shijianxiaxian;
+        disaster.shengyutianshu = disasterKind.shijianxiaxian + Random(range);
+        arch.youzainan = true;
 
-        public override void InitializeParameter(string parameter)
+        foreach (Military military in arch.Militaries)//发生灾难时不能补充
         {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            military.StopRecruitment();
         }
     }
 }
-

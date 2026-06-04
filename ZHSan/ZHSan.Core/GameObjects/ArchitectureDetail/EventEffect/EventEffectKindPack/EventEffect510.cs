@@ -1,36 +1,22 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect510 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect510 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int type;
+        var treasure = Session.Current.Scenario.Treasures.GetGameObject(eventEffect.GetIntParam()) as Treasure;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (treasure.BelongedPerson != null && treasure.BelongedPerson == person)
         {
-            Treasure t = Session.Current.Scenario.Treasures.GetGameObject(type) as Treasure;
-            if (t.BelongedPerson != null && t.BelongedPerson == person)
-            {
-                person.LoseTreasure(t);
-                t.Available = false;
-                t.HidePlace = Session.Current.Scenario.Architectures.GameObjects[GameObject.Random(Session.Current.Scenario.Architectures.GameObjects.Count)] as Architecture;
-            }
-        }
+            var random = Random(Session.Current.Scenario.Architectures.GameObjects.Count);
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.LoseTreasure(treasure);
+            treasure.Available = false;
+            treasure.HidePlace = Session.Current.Scenario.Architectures.GameObjects[random] as Architecture;
         }
     }
 }
-

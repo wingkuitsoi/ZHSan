@@ -1,29 +1,15 @@
-﻿using GameObjects;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect1210 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1210 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int id;
+        var facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(eventEffect.GetIntParam());
 
-        public override void ApplyEffectKind(Architecture a, Event e)
-        {
-            a.BeginToBuildAFacility(Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(id));
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        arch.BeginToBuildAFacility(facilityKind);
     }
 }
-

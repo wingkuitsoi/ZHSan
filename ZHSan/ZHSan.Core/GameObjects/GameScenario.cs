@@ -5338,7 +5338,7 @@ namespace GameObjects
                 {
                     ck.ID = num;
                     ck.Name = eventEffectKind.Value.Name;
-                    eventEffectKinds.AddEventEffectKind(ck);
+                    eventEffectKinds.Add(ck);
                 }
                 else
                 {
@@ -5524,7 +5524,7 @@ namespace GameObjects
                 {
                     ck.ID = num;
                     ck.Name = eventEffectKind.Value.Name;
-                    eventEffectKinds.AddEventEffectKind(ck);
+                    eventEffectKinds.Add(ck);
                 }
                 else
                 {
@@ -5546,7 +5546,7 @@ namespace GameObjects
                 if (commonData.AllEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     eventEffect.Kind = matchedKind;
-                    eventEffects.AddEventEffect(eventEffect);
+                    eventEffects.Add(eventEffect);
                 }
                 else
                 {

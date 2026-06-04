@@ -1,56 +1,24 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
-
-
 using System.Runtime.Serialization;
-using Tools;
+using GameObjects.FactionDetail;
 
-namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect2200 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect2200 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        private int increment;
+        var increment = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Faction f, Event e)
+        if (faction != null && Session.Current.Scenario.DiplomaticRelations != null)
         {
-            try
-            {
-                if (f == null)
-                {
-                    throw new Exception("f=null");
-                }
-                if (Session.Current.Scenario.DiplomaticRelations == null)
-                {
-                    throw new Exception("Session.Current.Scenario.DiplomaticRelations=null");
-                }
-                GameObjectList d = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(f.ID);
-                if (d == null)
-                {
-                    throw new Exception("d=null");
-                }
-                foreach (GameObjects.FactionDetail.DiplomaticRelation i in d)
-                {
-                    i.Relation += increment;
-                }
-            }
-            catch (Exception ex)
-            {
-                WebTools.TakeWarnMsg("ApplyEffectKind:ID" + ID, "", ex);
-            }
-        }
+            GameObjectList relations = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(faction.ID);
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            foreach (DiplomaticRelation i in relations)
             {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
+                i.Relation += increment;
             }
         }
     }
 }
-

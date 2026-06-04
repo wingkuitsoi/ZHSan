@@ -1,38 +1,24 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
+using GameObjects.Influences;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect330 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect330 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var titleId = eventEffect.GetIntParam();
+        var title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(titleId);
 
-        public override void ApplyEffectKind(Person person, Event e)
+        foreach (var t in person.RealTitles)
         {
-            GameObjects.PersonDetail.Title title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(increment);
-            foreach (GameObjects.PersonDetail.Title t in person.RealTitles)
+            if (t.Kind.Equals(title.Kind))
             {
-                if (t.Kind.Equals(title.Kind))
-                {
-                    title.Influences.PurifyInfluence(person, GameObjects.Influences.Applier.Title, title.ID, false);
-                    person.RealTitles.Remove(title);
-                }
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
+                title.Influences.PurifyInfluence(person, Applier.Title, titleId, false);
+                person.RealTitles.Remove(title);
             }
         }
     }
 }
-

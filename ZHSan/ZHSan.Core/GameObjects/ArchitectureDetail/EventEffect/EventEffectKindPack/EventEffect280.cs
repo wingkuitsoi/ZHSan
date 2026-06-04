@@ -1,47 +1,21 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect280 : EventEffectKind
 {
-
-
-    [DataContract]public class EventEffect280: EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int  mergeFactionID;
-        
-        public override void InitializeParameter(string parameter)
+        var factionlist = Session.Current.Scenario.Factions;
+        var oldFaction = person.BelongedFaction;
+        var mergeFaction = factionlist.GetGameObject(eventEffect.GetIntParam()) as Faction;
+
+        if (oldFaction != null && mergeFaction != null && person == oldFaction.Leader)
         {
-            try
-            {
-                this.mergeFactionID = int.Parse(parameter);
-                
-            }
-            catch
-            {
-                
-            }
-           
+            oldFaction.ChangeFaction(mergeFaction);
+            //oldFaction.Leader.InitialLoyalty();
         }
-
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            FactionList factionlist = Session.Current.Scenario.Factions;
-            Faction oldFaction = person .BelongedFaction ;
-            Faction mergeFaction = factionlist.GetGameObject(mergeFactionID) as Faction;
-
-            if (oldFaction != null && mergeFaction != null && person == oldFaction.Leader)
-            {
-                oldFaction.ChangeFaction(mergeFaction);
-                
-                //oldFaction.Leader.InitialLoyalty();
-            }
-           
-        }
-
-
-
     }
 }
-

@@ -1,29 +1,13 @@
-﻿using GameObjects;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect1400 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1400 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int kind;
-
-        public override void ApplyEffectKind(Architecture a, Event e)
-        {
-            a.Kind = Session.Current.Scenario.GameCommonData.AllArchitectureKinds.GetArchitectureKind(kind);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.kind = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        arch.Kind = Session.Current.Scenario.GameCommonData.AllArchitectureKinds.GetArchitectureKind(eventEffect.GetIntParam());
     }
 }
-

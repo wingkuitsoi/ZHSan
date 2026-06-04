@@ -1,31 +1,15 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect320 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect320 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
-
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            GameObjects.PersonDetail.Stunt stunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(increment);
-            person.Stunts.AddStunt(stunt);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        var stuntId = eventEffect.GetIntParam();
+        var stunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(stuntId);
+        person.Stunts.AddStunt(stunt);
     }
 }
-

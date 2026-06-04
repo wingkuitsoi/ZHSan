@@ -1,32 +1,18 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
+using GameObjects.Influences;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect305 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect305 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var skillId = eventEffect.GetIntParam();
+        var skill = Session.Current.Scenario.GameCommonData.AllSkills.GetSkill(skillId);
 
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            GameObjects.PersonDetail.Skill skill = Session.Current.Scenario.GameCommonData.AllSkills.GetSkill(increment);
-            person.Skills.Skills.Remove(increment);
-            skill.Influences.PurifyInfluence(person, GameObjects.Influences.Applier.Skill, increment, false);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        person.Skills.Skills.Remove(skillId);
+        skill.Influences.PurifyInfluence(person, Applier.Skill, skillId, false);
     }
 }
-
