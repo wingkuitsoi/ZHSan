@@ -5376,7 +5376,7 @@ namespace GameObjects
                 {
                     ck.ID = num;
                     ck.Name = eventEffectKind.Value.Name;
-                    troopEventEffectKinds.AddEventEffectKind(ck);
+                    troopEventEffectKinds.Add(ck);
                 }
                 else
                 {
@@ -5564,7 +5564,7 @@ namespace GameObjects
                 {
                     ck.ID = num;
                     ck.Name = eventEffectKind.Value.Name;
-                    troopEventEffectKinds.AddEventEffectKind(ck);
+                    troopEventEffectKinds.Add(ck);
                 }
                 else
                 {
@@ -5586,7 +5586,7 @@ namespace GameObjects
                 if (commonData.AllTroopEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     eventEffect.Kind = matchedKind;
-                    allTroopEventEffects.AddEventEffect(eventEffect);
+                    allTroopEventEffects.Add(eventEffect);
                 }
                 else
                 {

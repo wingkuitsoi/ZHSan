@@ -358,7 +358,7 @@ namespace GameObjects
             {
                 TroopEffectArea item = new TroopEffectArea();
                 item.Kind = (EffectAreaKind) int.Parse(strArray[i]);
-                item.Effect = eventEffects.GetEventEffect(int.Parse(strArray[i + 1]));
+                item.Effect = eventEffects.Get(int.Parse(strArray[i + 1]));
                 this.EffectAreas.Add(item);
             }
         }
@@ -373,7 +373,7 @@ namespace GameObjects
                 if (!persons.ContainsKey(int.Parse(strArray[i]))) continue;
                 TroopEffectPerson item = new TroopEffectPerson();
                 item.EffectPerson = persons[int.Parse(strArray[i])];
-                item.Effect = eventEffects.GetEventEffect(int.Parse(strArray[i + 1]));
+                item.Effect = eventEffects.Get(int.Parse(strArray[i + 1]));
                 this.EffectPersons.Add(item);
             }
         }
@@ -385,7 +385,7 @@ namespace GameObjects
             this.SelfEffects.Clear();
             for (int i = 0; i < strArray.Length; i++)
             {
-                GameObjects.TroopDetail.EventEffect.EventEffect eventEffect = eventEffects.GetEventEffect(int.Parse(strArray[i]));
+                GameObjects.TroopDetail.EventEffect.EventEffect eventEffect = eventEffects.Get(int.Parse(strArray[i]));
                 if (eventEffect != null)
                 {
                     this.SelfEffects.Add(eventEffect);
