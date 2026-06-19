@@ -451,9 +451,22 @@ namespace Platforms
                 foreach (var item in songs)
                 {
                     res = item;
-                    if ((!item.EndsWith(".mp3") && !item.EndsWith(".wav")))
+                    // Issue: ArgumentException - Could not load the specified container!
+                    // Solution: Use OGG audio files instead of MP3 (tested on Windows 11).
+                    // Ref. https://cloud.tencent.com/developer/ask/sof/106178561?from=16139
+                    if (OperatingSystem.IsWindows()) // Alternative: Platform.PlatFormType == PlatFormType.Win if available
                     {
-                        continue;
+                        if (!item.EndsWith(".ogg"))
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if (!item.EndsWith(".mp3") && !item.EndsWith(".wav"))
+                        {
+                            continue;
+                        }
                     }
                     if (Platform.PlatFormType == PlatFormType.Android)
                     {
